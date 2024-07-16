@@ -24,8 +24,6 @@ export const LOGIN_USER = gql`
     loginUser(username: $username, password: $password) {
         token
         id
-        username
-        role
     }
   }
 `;

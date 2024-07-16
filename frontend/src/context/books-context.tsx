@@ -1,8 +1,8 @@
 import React, { createContext, useState, useEffect, FC, ReactNode } from 'react';
 import { useSnackbar } from './snackbar-context';
-import { useQuery, useMutation } from '@apollo/client';
+import { useGqlQuery } from '../hooks/useGqlQuery';
 import { GET_BOOKS } from '../graphql/queries/book-queries';
-import { UPDATE_BOOK, ADD_BOOK, DELETE_BOOK } from '../graphql/mutations/book-mutations';
+import { ADD_BOOK, UPDATE_BOOK, DELETE_BOOK } from '../graphql/mutations/book-mutations';
 
 export interface Book {
   isbn: string;
@@ -11,6 +11,7 @@ export interface Book {
   price: number;
   quantity: number;
 }
+export type BookUpdateInput = Omit<Book, 'isbn'>;
 
 export interface BooksContextType {
   books: Book[];
@@ -23,73 +24,57 @@ export interface BooksContextType {
 
 export const BooksContext = createContext<BooksContextType>({
   books: [],
-  fetchBooks: () => { },
-  addBook: () => { },
-  updateBook: () => { },
-  deleteBook: () => { },
-  setBooks: () => { },
+  fetchBooks: () => {},
+  addBook: () => {},
+  updateBook: () => {},
+  deleteBook: () => {},
+  setBooks: () => {},
 });
 
 export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { showMessage } = useSnackbar();
-  const { loading, data, refetch } = useQuery(GET_BOOKS);
+
+  const { data: booksData, loading: booksLoading, save: saveBookMutation, refetch: refetchBooks } = useGqlQuery<{ books: Book[] }, { input: Book }>({
+    query: GET_BOOKS,
+    mutation: ADD_BOOK,
+  });
+
+  const { save: updateBookMutation } = useGqlQuery<{ books: Book[] }, { isbn: string; input: BookUpdateInput }>({
+    query: GET_BOOKS,
+    mutation: UPDATE_BOOK,
+  });
+
+  const { save: deleteBookMutation } = useGqlQuery<{ books: Book[] }, { isbn: string }>({
+    query: GET_BOOKS,
+    mutation: DELETE_BOOK,
+  });
+
   const [books, setBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    console.log(loading, data)
-    if (!loading && data) {
-      setBooks(data.books);
+    if (booksData) {
+      console.log("booksData:", booksData);
+      setBooks(booksData.books);
     }
-  }, [loading, data]);
-
-  const [addBookMutation] = useMutation(ADD_BOOK, {
-    onError: (error) => {
-      console.error('Failed to add book', error);
-    },
-    onCompleted: () => {
-      showMessage('New Book Added Successfully');
-      refetch();
-    },
-  });
-
-  const [updateBookMutation] = useMutation(UPDATE_BOOK, {
-    onError: (error) => {
-      console.error('Failed to update book', error);
-    },
-    onCompleted: () => {
-      showMessage('Book Updated Successfully');
-      refetch();
-    },
-  });
-
-  const [deleteBookMutation] = useMutation(DELETE_BOOK, {
-    onError: (error) => {
-      console.error('Failed to delete book', error);
-      showMessage('Book Deletion Unsuccessful');
-    },
-    onCompleted: () => {
-      showMessage('Book Deleted Successfully');
-      refetch();
-    },
-  });
+  }, [booksData]);
 
   const fetchBooks = () => {
-    refetch();
+    refetchBooks();
   };
 
   const addBook = async (newBook: Book) => {
     try {
-      await addBookMutation({
-        variables: {
-          input: {
-            isbn: newBook.isbn,
-            name: newBook.name,
-            category: newBook.category,
-            price: parseInt(newBook.price.toString()),
-            quantity: parseInt(newBook.quantity.toString()),
-          },
+      await saveBookMutation({
+        input: {
+          isbn: newBook.isbn,
+          name: newBook.name,
+          category: newBook.category,
+          price: newBook.price,
+          quantity: newBook.quantity,
         },
       });
+      fetchBooks();
+      showMessage('New Book Added Successfully');
     } catch (error) {
       console.error('Failed to add book', error);
     }
@@ -98,25 +83,29 @@ export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const updateBook = async (updatedBook: Book) => {
     try {
       await updateBookMutation({
-        variables: {
-          isbn: updatedBook.isbn,
-          input: {
-            name: updatedBook.name,
-            category: updatedBook.category,
-            price: parseInt(updatedBook.price.toString()),
-            quantity: parseInt(updatedBook.quantity.toString()),
-          }
-        }
+        isbn: updatedBook.isbn,
+        input: {
+          name: updatedBook.name,
+          category: updatedBook.category,
+          price: updatedBook.price,
+          quantity: updatedBook.quantity,
+        },
       });
+      fetchBooks();
+      showMessage('Book Updated Successfully');
     } catch (error) {
       console.error('Failed to update book', error);
     }
   };
+
   const deleteBook = async (isbn: string) => {
     try {
-      await deleteBookMutation({ variables: { isbn } });
+      await deleteBookMutation({ isbn });
+      fetchBooks();
+      showMessage('Book Deleted Successfully');
     } catch (error) {
       console.error('Failed to delete book', error);
+      showMessage('Book Deletion Unsuccessful');
     }
   };
 

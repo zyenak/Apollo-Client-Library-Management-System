@@ -39,7 +39,7 @@ const CustomTable: React.FC<Props> = ({ rows, columns, actions }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row, rowIndex) => (
+          {rows && rows?.map((row, rowIndex) => (
             <TableRow key={rowIndex}>
               {columns.map((column, colIndex) => (
                 <TableCell key={colIndex}>{column.render(row)}</TableCell>

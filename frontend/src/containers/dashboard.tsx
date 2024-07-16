@@ -164,12 +164,12 @@ const Dashboard: React.FC = () => {
       </div>
       {books && (
       <CustomTable
-        rows={books}
+        rows={books ?? []}
         columns={bookColumns}
       />
       )}
 
-      {user && !isAdmin && (
+      {user && !isAdmin &&  (
         <>
           <div className={`${classes.pageHeader} ${classes.mb2}`}>
             <Typography variant="h5">Borrowed Books</Typography>

@@ -26,7 +26,11 @@ export const useGqlQuery = <TData, TVariables extends OperationVariables>({
   });
 
   // Mutation execution
-  const [mutate] = useMutation<TData, TVariables>(mutation!);
+  let mutate: (arg0: { variables: TVariables; }) => any;
+  if (mutation) {
+    [mutate] = useMutation<TData, TVariables>(mutation!);
+  }
+   
 
   // Function to execute mutation
   const handleMutate = async (mutationVariables?: TVariables) => {
