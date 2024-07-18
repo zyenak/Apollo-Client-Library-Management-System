@@ -1,4 +1,6 @@
+import { PubSub } from 'graphql-subscriptions';
 import { Book as BookModel } from '../models/index.js';
+const pubsub = new PubSub();
 export const bookResolvers = {
     Query: {
         books: async () => {
@@ -14,6 +16,7 @@ export const bookResolvers = {
                 throw new Error('Not authorized');
             }
             const newBook = await BookModel.create(input);
+            pubsub.publish('BOOK_ADDED', { bookAdded: newBook });
             return newBook;
         },
         updateBook: async (_, { isbn, input }, { currentUser }) => {
@@ -37,6 +40,22 @@ export const bookResolvers = {
             }
             await book.destroy();
             return book;
+        },
+    },
+    Subscription: {
+        bookAdded: {
+            // subscribe: async (_: any, __: any) => {
+            //   // if (!currentUser) {
+            //   //   throw new Error('Not authorized');
+            //   // }
+            //   console.log('Subscribing to BOOK_ADDED');
+            //   const asyncIterator = await pubsub.asyncIterator(['BOOK_ADDED']);
+            //   console.log('Async Iterator:', asyncIterator);
+            //   return asyncIterator;
+            // },
+            // bookAdded: {
+            subscribe: () => pubsub.asyncIterator(['BOOK_ADDED'])
+            // },
         },
     },
 };

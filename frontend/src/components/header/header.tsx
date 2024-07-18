@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Box,
@@ -11,20 +11,38 @@ import {
   Button,
   Tooltip,
   MenuItem,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import AdbIcon from "@mui/icons-material/Adb";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import ClearAllIcon from "@mui/icons-material/ClearAll";
 import { useUser } from "../../context/user-context";
 import { ChangePasswordDialog } from "../change-password/change-password";
 import { useApi } from "../../hooks/useApi";
 import { useSnackbar } from "../../context/snackbar-context";
+import { useSubscription } from "@apollo/client";
+import { BOOK_ADDED } from "../../graphql/subscriptions/book-subscriptions";
 
 const AppHeader: React.FC<{ onLoginClick: () => void }> = ({ onLoginClick }) => {
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+  const [anchorElNotifications, setAnchorElNotifications] = useState<null | HTMLElement>(null);
   const [openChangePasswordDialog, setOpenChangePasswordDialog] = useState(false);
   const { user, logoutUser } = useUser();
   const { showMessage } = useSnackbar();
   const { saveData } = useApi();
+  const { data, loading } = useSubscription(BOOK_ADDED);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (data) {
+      setNotifications((prev) => [...prev, data.bookAdded]);
+    }
+    console.log("Header", data, loading);
+  }, [data, loading]);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -32,6 +50,19 @@ const AppHeader: React.FC<{ onLoginClick: () => void }> = ({ onLoginClick }) => 
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
+  };
+
+  const handleOpenNotifications = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorElNotifications(event.currentTarget);
+  };
+
+  const handleCloseNotifications = () => {
+    setAnchorElNotifications(null);
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    handleCloseNotifications();
   };
 
   const handleLogout = () => {
@@ -55,7 +86,7 @@ const AppHeader: React.FC<{ onLoginClick: () => void }> = ({ onLoginClick }) => 
         url: "/users/change-password",
         payload: { currentPassword, newPassword, confirmPassword },
       });
-  
+
       showMessage(data.message);
       handleCloseChangePasswordDialog();
     } catch (error: any) {
@@ -84,12 +115,57 @@ const AppHeader: React.FC<{ onLoginClick: () => void }> = ({ onLoginClick }) => 
               Library Management System
             </Typography>
           </Link>
+          {user && user.role !== 'admin' && (
+            <Box sx={{ flexGrow: 0 }}>
+              <Tooltip title="Open notifications">
+                <IconButton onClick={handleOpenNotifications} sx={{ pr: 2 }}>
+                  <NotificationsIcon />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                sx={{ mt: "45px" }}
+                id="menu-notifications"
+                anchorEl={anchorElNotifications}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={Boolean(anchorElNotifications)}
+                onClose={handleCloseNotifications}
+              >
+                <MenuItem>
+                  <Typography textAlign="center" onClick={handleClearNotifications}>
+                    <ClearAllIcon /> Clear All
+                  </Typography>
+                </MenuItem>
+                <Divider />
+                {notifications.length > 0 ? (
+                  <List>
+                    {notifications.map((notification, index) => (
+                      <ListItem key={index}>
+                        <ListItemText primary={`New book added: ${notification.name}`} />
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <MenuItem>
+                    <Typography textAlign="center">No new notifications</Typography>
+                  </MenuItem>
+                )}
+              </Menu>
+            </Box>
+          )}
           <Box sx={{ flexGrow: 0 }}>
             {user ? (
               <>
                 <Tooltip title="Open settings">
                   <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  {user.username && <Avatar>{user.username.charAt(0).toUpperCase()}</Avatar>}
+                    {user.username && <Avatar>{user.username.charAt(0).toUpperCase()}</Avatar>}
                   </IconButton>
                 </Tooltip>
                 <Menu
@@ -127,11 +203,11 @@ const AppHeader: React.FC<{ onLoginClick: () => void }> = ({ onLoginClick }) => 
           </Box>
         </Toolbar>
       </Container>
-      {/* <ChangePasswordDialog
+      <ChangePasswordDialog
         open={openChangePasswordDialog}
         handleClose={handleCloseChangePasswordDialog}
         handleSubmit={handleSubmitChangePassword}
-      /> */}
+      />
     </AppBar>
   );
 };

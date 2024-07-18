@@ -10,4 +10,7 @@ export const resolvers = {
     ...userResolvers.Mutation,
     ...bookResolvers.Mutation,
   },
+  Subscription: {
+    ...bookResolvers.Subscription, 
+  },
 };

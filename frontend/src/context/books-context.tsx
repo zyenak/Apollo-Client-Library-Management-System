@@ -3,6 +3,8 @@ import { useSnackbar } from './snackbar-context';
 import { useGqlQuery } from '../hooks/useGqlQuery';
 import { GET_BOOKS } from '../graphql/queries/book-queries';
 import { ADD_BOOK, UPDATE_BOOK, DELETE_BOOK } from '../graphql/mutations/book-mutations';
+import { useSubscription } from '@apollo/client';
+import { BOOK_ADDED } from '../graphql/subscriptions/book-subscriptions';
 
 export interface Book {
   isbn: string;
@@ -24,11 +26,11 @@ export interface BooksContextType {
 
 export const BooksContext = createContext<BooksContextType>({
   books: [],
-  fetchBooks: () => {},
-  addBook: () => {},
-  updateBook: () => {},
-  deleteBook: () => {},
-  setBooks: () => {},
+  fetchBooks: () => { },
+  addBook: () => { },
+  updateBook: () => { },
+  deleteBook: () => { },
+  setBooks: () => { },
 });
 
 export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
@@ -53,7 +55,6 @@ export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   useEffect(() => {
     if (booksData) {
-      console.log("booksData:", booksData);
       setBooks(booksData.books);
     }
   }, [booksData]);
@@ -69,12 +70,11 @@ export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
           isbn: newBook.isbn,
           name: newBook.name,
           category: newBook.category,
-          price: newBook.price,
-          quantity: newBook.quantity,
+          price: parseInt(newBook.price.toString()),
+          quantity: parseInt(newBook.quantity.toString()),
         },
       });
       fetchBooks();
-      showMessage('New Book Added Successfully');
     } catch (error) {
       console.error('Failed to add book', error);
     }
@@ -87,9 +87,10 @@ export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
         input: {
           name: updatedBook.name,
           category: updatedBook.category,
-          price: updatedBook.price,
-          quantity: updatedBook.quantity,
-        },
+          price: parseInt(updatedBook.price.toString()),
+          quantity: parseInt(updatedBook.quantity.toString()),
+        }
+
       });
       fetchBooks();
       showMessage('Book Updated Successfully');
@@ -97,7 +98,6 @@ export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
       console.error('Failed to update book', error);
     }
   };
-
   const deleteBook = async (isbn: string) => {
     try {
       await deleteBookMutation({ isbn });
@@ -105,7 +105,6 @@ export const BooksProvider: FC<{ children: ReactNode }> = ({ children }) => {
       showMessage('Book Deleted Successfully');
     } catch (error) {
       console.error('Failed to delete book', error);
-      showMessage('Book Deletion Unsuccessful');
     }
   };
 

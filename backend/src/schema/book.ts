@@ -32,4 +32,8 @@ export const bookTypeDefs = `#graphql
     updateBook(isbn: String!, input: UpdateBookInput!): Book
     deleteBook(isbn: String!): Book
   }
+
+  type Subscription {
+    bookAdded: Book!
+  }
 `;

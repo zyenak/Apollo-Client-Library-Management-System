@@ -1,3 +1,4 @@
+import { PubSub } from 'graphql-subscriptions';
 export interface User {
   id: string;
   username: string;
@@ -21,6 +22,7 @@ export interface AuthPayload {
 
 export interface Context {
   currentUser: User | null;
+  pubsub?: PubSub;
 }
 
 export interface Book {

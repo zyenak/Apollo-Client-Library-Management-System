@@ -92,7 +92,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variables: { username, password },
       });
   
-      
+      console.log("loginuser:", data.loginUser.token)
       localStorage.setItem('token', data.loginUser.token);
       if (data) {
         // Fetch complete user data including borrowedBooks

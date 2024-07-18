@@ -43,7 +43,7 @@ export const userResolvers = {
         throw new Error('Invalid credentials');
       }
 
-      const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+      const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: '30d' });
 
       // Optionally fetch borrowedBooks for the user
       const userlogin = await UserModel.findByPk(user.id, {
