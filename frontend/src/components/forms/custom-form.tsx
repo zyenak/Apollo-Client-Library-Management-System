@@ -1,5 +1,5 @@
 import React, { useEffect, useContext } from 'react';
-import { useForm, Controller, FormProvider, useFieldArray, useWatch } from 'react-hook-form';
+import { useForm, Controller, FormProvider, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {
@@ -13,14 +13,11 @@ import {
   Select,
   MenuItem,
   Typography,
-  IconButton,
-  Grid,
   SelectChangeEvent
 } from '@mui/material';
-import { Add, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { BooksContext } from '../../context/books-context'; // Import BooksContext
 import StudentInformation from './student-information';
+import BooksFieldArray from './issue-books';
 import classes from './styles.module.css';
 
 export type FormField =
@@ -35,7 +32,7 @@ export interface CustomFormProps {
   fields: FormField[];
   validationSchema: yup.ObjectSchema<any>;
   onRoleChange?: (event: SelectChangeEvent<string>) => void;
-  currentRole?: string; // Added prop for current role
+  currentRole?: string;
 }
 
 const CustomForm: React.FC<CustomFormProps> = ({
@@ -48,18 +45,13 @@ const CustomForm: React.FC<CustomFormProps> = ({
   onRoleChange,
   currentRole,
 }) => {
-  const { books } = useContext(BooksContext); 
   const methods = useForm({
     defaultValues: initialData,
     resolver: yupResolver(validationSchema),
     mode: 'onTouched',
   });
 
-  const { control, handleSubmit, formState, getValues, reset, watch } = methods;
-  const { fields: fieldArray, append, remove } = useFieldArray({
-    control,
-    name: 'books',
-  });
+  const { control, handleSubmit, formState, getValues, reset } = methods;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,9 +63,6 @@ const CustomForm: React.FC<CustomFormProps> = ({
   const formSubmit = (data: any) => {
     onSubmit(data, toUpdate);
   };
-
-  // Watch for changes in issue dates
-  const watchedBooks = useWatch({ name: 'books', control });
 
   return (
     <FormProvider {...methods}>
@@ -99,7 +88,7 @@ const CustomForm: React.FC<CustomFormProps> = ({
                           onChange={(event) => {
                             controllerField.onChange(event);
                             if (field.name === 'role' && onRoleChange) {
-                              onRoleChange(event); // Call onRoleChange when role changes
+                              onRoleChange(event);
                             }
                           }}
                         >
@@ -135,93 +124,15 @@ const CustomForm: React.FC<CustomFormProps> = ({
                 )}
               </FormControl>
             ))}
-            {currentRole === 'student' && (
-              <StudentInformation /> 
-            )}
+            {currentRole === 'student' && <StudentInformation />}
             {formType === 'user' && (
-              <>
-                {fieldArray.map((item, index) => (
-                  <Grid container spacing={1} key={item.id} className={classes.bookRow}>
-                    <Grid item xs={4}>
-                      <Controller
-                        name={`books[${index}].book`}
-                        control={control}
-                        render={({ field }) => (
-                          <FormControl fullWidth>
-                            <InputLabel>Book</InputLabel>
-                            <Select
-                              {...field}
-                              label="Book"
-                              error={!!(formState.errors.books as any)?.[index]?.book}
-                            >
-                              {books.map((book) => (
-                                <MenuItem key={book.isbn} value={book.isbn}>
-                                  {book.name}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                            {(formState.errors.books as any)?.[index]?.book && (
-                              <Typography color="error">
-                                {(formState.errors.books as any)[index]?.book?.message as string}
-                              </Typography>
-                            )}
-                          </FormControl>
-                        )}
-                      />
-                    </Grid>
-                    <Grid item xs={3}>
-                      <Controller
-                        name={`books[${index}].issueDate`}
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            label="Issue Date"
-                            type="date"
-                            InputLabelProps={{ shrink: true }}
-                            error={!!(formState.errors.books as any)?.[index]?.issueDate}
-                            helperText={(formState.errors.books as any)?.[index]?.issueDate?.message as string}
-                          />
-                        )}
-                      />
-                    </Grid>
-                    <Grid item xs={3}>
-                      <Controller
-                        name={`books[${index}].returnDate`}
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            label="Return Date"
-                            type="date"
-                            InputLabelProps={{ shrink: true }}
-                            disabled={!watchedBooks[index]?.issueDate}
-                            error={!!(formState.errors.books as any)?.[index]?.returnDate}
-                            helperText={(formState.errors.books as any)?.[index]?.returnDate?.message as string}
-                          />
-                        )}
-                      />
-                    </Grid>
-                    {index > 0 && (
-                      <Grid item xs={2} className={classes.deleteButton}>
-                        <IconButton onClick={() => remove(index)}>
-                          <Delete />
-                        </IconButton>
-                      </Grid>
-                    )}
-                  </Grid>
-                ))}
-                <Button
-                  type="button"
-                  variant="contained"
-                  color="primary"
-                  onClick={() => append({ book: '', issueDate: '', returnDate: '' })}
-                  startIcon={<Add />}
-                  className={classes.addBookButton}
-                >
-                  Add Book
-                </Button>
-              </>
+              <BooksFieldArray
+                control={control}
+                formState={formState}
+                watch={useWatch({ name: 'books', control })}
+                append={(value) => methods.setValue('books', [...methods.getValues('books'), value])}
+                remove={(index) => methods.setValue('books', methods.getValues('books').filter((_: any, i: number) => i !== index))}
+              />
             )}
           </FormGroup>
           <div className={classes.btnContainer}>
