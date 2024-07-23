@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '../context/user-context';
 import CustomForm, { FormField } from '../components/forms/custom-form';
@@ -17,7 +17,6 @@ const UserFormContainer: React.FC = () => {
   const [role, setRole] = useState(initialData.role);
 
   useEffect(() => {
-    // Reset role and student fields when userId changes
     setRole(initialData.role);
   }, [userId, initialData.role]);
 
@@ -28,7 +27,6 @@ const UserFormContainer: React.FC = () => {
 
   const handleRoleChange = (event: SelectChangeEvent<string>) => {
     setRole(event.target.value as string);
-   
   };
 
   const userFields: FormField[] = [
@@ -37,11 +35,6 @@ const UserFormContainer: React.FC = () => {
     { label: 'Role', name: 'role', type: 'select', required: true, options: ['student', 'teacher', 'outsider'] },
   ];
 
-  const studentFields: FormField[] = [
-    { label: 'Student ID', name: 'studentId', type: 'text', required: true },
-    { label: 'Student Name', name: 'studentName', type: 'text', required: true },
-    { label: 'Semester Enrolled', name: 'semesterEnrolled', type: 'select', required: true, options: ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'] },
-  ];
 
   const validationSchema = yup.object().shape({
     username: yup.string().required('Username is required'),
@@ -60,9 +53,10 @@ const UserFormContainer: React.FC = () => {
       initialData={initialData}
       toUpdate={!!userId}
       onSubmit={handleUserSubmit}
-      fields={role === 'student' ? [...userFields, ...studentFields] : userFields}
+      fields={userFields}
       validationSchema={validationSchema}
       onRoleChange={handleRoleChange}
+      currentRole={role} // Pass the current role to CustomForm
     />
   );
 };

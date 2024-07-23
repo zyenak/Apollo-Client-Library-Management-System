@@ -13,8 +13,9 @@ const schema = yup.object({
     .matches(/[a-z]/, "Password must contain a lowercase letter")
     .matches(/\d/, "Password must contain a number"),
   confirmPassword: yup.string()
-    .oneOf([yup.ref('newPassword'), undefined], "Passwords must match")
-    .required("Confirm password is required"),
+    .required("Confirm password is required")
+    .oneOf([yup.ref('newPassword'), ""], "Passwords must match"),
+
 });
 
 interface ChangePasswordDialogProps {

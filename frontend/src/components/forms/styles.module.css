@@ -20,3 +20,16 @@
     padding-bottom: 1em;
     margin-bottom: 1.5em;
 }
+
+.bookRow {
+    margin-bottom: 1em;
+}
+
+.addBookButton {
+    margin-bottom: 2em; 
+}
+
+.deleteButton {
+    display: flex;
+    justify-content: flex-end;
+}
