@@ -13,9 +13,11 @@ import {
   Select,
   MenuItem,
   Typography,
+  SelectChangeEvent,
 } from '@mui/material';
 import classes from './styles.module.css';
 import { useNavigate } from 'react-router-dom';
+import StudentInformation from './student-information'; // Import StudentInformation component
 
 export type FormField =
   | { label: string; name: string; type: 'text' | 'number' | 'password'; required: boolean; options?: undefined }
@@ -28,6 +30,8 @@ export interface CustomFormProps {
   onSubmit: (data: any, toUpdate: boolean) => void;
   fields: FormField[];
   validationSchema: any;
+  onRoleChange?: (event: SelectChangeEvent<string>) => void;
+  currentRole?: string; // Added prop for current role
 }
 
 const CustomForm: React.FC<CustomFormProps> = ({
@@ -37,11 +41,13 @@ const CustomForm: React.FC<CustomFormProps> = ({
   onSubmit,
   fields,
   validationSchema,
+  onRoleChange,
+  currentRole,
 }) => {
   const methods = useForm({
     defaultValues: initialData,
     resolver: yupResolver(validationSchema),
-    mode: 'onTouched', // Show validation errors on touched fields
+    mode: 'onTouched',
   });
 
   const navigate = useNavigate();
@@ -49,6 +55,12 @@ const CustomForm: React.FC<CustomFormProps> = ({
   useEffect(() => {
     methods.reset(initialData);
   }, [initialData, methods]);
+
+  useEffect(() => {
+    if (onRoleChange) {
+      methods.reset({ ...methods.getValues(), role: currentRole });
+    }
+  }, [currentRole, methods, onRoleChange]);
 
   const formSubmit = (data: any) => {
     onSubmit(data, toUpdate);
@@ -75,6 +87,12 @@ const CustomForm: React.FC<CustomFormProps> = ({
                           {...controllerField}
                           label={field.label}
                           error={!!methods.formState.errors[field.name]}
+                          onChange={(event) => {
+                            controllerField.onChange(event);
+                            if (field.name === 'role' && onRoleChange) {
+                              onRoleChange(event); // Call onRoleChange when role changes
+                            }
+                          }}
                         >
                           {field.options?.map((option) => (
                             <MenuItem key={option} value={option}>
@@ -108,12 +126,14 @@ const CustomForm: React.FC<CustomFormProps> = ({
                 )}
               </FormControl>
             ))}
+            {currentRole === 'student' && (
+              <StudentInformation /> // Render StudentInformation if role is student
+            )}
           </FormGroup>
           <div className={classes.btnContainer}>
             <Button
               variant="contained"
               color="secondary"
-              // onClick={() => methods.reset(initialData)}
               onClick={() => navigate(-1)}
             >
               Cancel

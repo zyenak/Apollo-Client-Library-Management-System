@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '../context/user-context';
 import CustomForm, { FormField } from '../components/forms/custom-form';
 import * as yup from 'yup';
+import { SelectChangeEvent } from '@mui/material';
 
 const UserFormContainer: React.FC = () => {
   const { addUser, users } = useUser();
@@ -15,9 +16,19 @@ const UserFormContainer: React.FC = () => {
 
   const [role, setRole] = useState(initialData.role);
 
+  useEffect(() => {
+    // Reset role and student fields when userId changes
+    setRole(initialData.role);
+  }, [userId, initialData.role]);
+
   const handleUserSubmit = (data: any) => {
     addUser(data);
     navigate('/users');
+  };
+
+  const handleRoleChange = (event: SelectChangeEvent<string>) => {
+    setRole(event.target.value as string);
+   
   };
 
   const userFields: FormField[] = [
@@ -43,10 +54,6 @@ const UserFormContainer: React.FC = () => {
     }),
   });
 
-  const handleRoleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setRole(event.target.value as string);
-  };
-
   return (
     <CustomForm
       formType="user"
@@ -55,6 +62,7 @@ const UserFormContainer: React.FC = () => {
       onSubmit={handleUserSubmit}
       fields={role === 'student' ? [...userFields, ...studentFields] : userFields}
       validationSchema={validationSchema}
+      onRoleChange={handleRoleChange}
     />
   );
 };

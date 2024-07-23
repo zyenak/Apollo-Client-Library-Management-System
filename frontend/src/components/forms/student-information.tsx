@@ -18,7 +18,7 @@ const StudentInformation: React.FC = () => {
               label="Student ID"
               required
               error={!!formState.errors.studentId}
-              helperText={formState.errors.studentId?.message}
+              helperText={formState.errors.studentId?.message as string || ''}
             />
           )}
         />
@@ -33,7 +33,7 @@ const StudentInformation: React.FC = () => {
               label="Student Name"
               required
               error={!!formState.errors.studentName}
-              helperText={formState.errors.studentName?.message}
+              helperText={formState.errors.studentName?.message as string || ''}
             />
           )}
         />
@@ -60,7 +60,7 @@ const StudentInformation: React.FC = () => {
         />
         {formState.errors.semesterEnrolled && (
           <Typography color="error">
-            {formState.errors.semesterEnrolled.message}
+            {formState.errors.semesterEnrolled.message as string || ''}
           </Typography>
         )}
       </FormControl>

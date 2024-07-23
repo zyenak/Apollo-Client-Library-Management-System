@@ -206,7 +206,7 @@ const AppHeader: React.FC<{ onLoginClick: () => void }> = ({ onLoginClick }) => 
       <ChangePasswordDialog
         open={openChangePasswordDialog}
         handleClose={handleCloseChangePasswordDialog}
-        handleSubmit={handleSubmitChangePassword}
+        // handleSubmit={handleSubmitChangePassword}
       />
     </AppBar>
   );

@@ -1,20 +1,26 @@
-import React, { useState, forwardRef, KeyboardEvent, useEffect } from "react";
-import {
-  Button,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Slide,
-} from "@mui/material";
-import { useApi } from "../../hooks/useApi";
-import { useSnackbar } from "../../context/snackbar-context";
+import React, { useEffect, forwardRef } from "react";
+import { Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle, Slide } from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+
+// Define validation schema with Yup
+const schema = yup.object({
+  newPassword: yup.string()
+    .required("Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .matches(/[A-Z]/, "Password must contain an uppercase letter")
+    .matches(/[a-z]/, "Password must contain a lowercase letter")
+    .matches(/\d/, "Password must contain a number"),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref('newPassword'), undefined], "Passwords must match")
+    .required("Confirm password is required"),
+});
 
 interface ChangePasswordDialogProps {
   open: boolean;
   handleClose: () => void;
-  handleSubmit: (currentPassword: string, newPassword: string, confirmPassword: string) => void;
+  // handleSubmit: (newPassword: string, confirmPassword: string) => void;
 }
 
 const Transition = forwardRef(function Transition(
@@ -27,91 +33,25 @@ const Transition = forwardRef(function Transition(
 export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   open,
   handleClose,
-  handleSubmit,
+  // handleSubmit,
 }) => {
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const { control, handleSubmit: handleFormSubmit, formState: { errors, isValid }, reset } = useForm({
+    resolver: yupResolver(schema),
+    mode: 'onTouched',
+  });
 
-  const [currentPasswordError, setCurrentPasswordError] = useState<string>("");
-  const [newPasswordError, setNewPasswordError] = useState<string>("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
-
-  const [isFormValid, setIsFormValid] = useState<boolean>(false);
-
-  const { saveData } = useApi();
-  const { showMessage } = useSnackbar();
+  const onSubmit = (data: any) => {
+    console.log('New Password:', data.newPassword);
+    console.log('Confirm Password:', data.confirmPassword);
+    // handleSubmit(data.newPassword, data.confirmPassword);
+    reset(); // Reset form fields after successful submit
+  };
 
   useEffect(() => {
     if (!open) {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setCurrentPasswordError("");
-      setNewPasswordError("");
-      setConfirmPasswordError("");
-      setIsFormValid(false);
+      reset(); // Reset form fields when dialog is closed
     }
-  }, [open]);
-
-
-
-  const validateForm = () => {
-    console.log(currentPasswordError, newPassword, currentPassword)
-    if (currentPassword && !currentPasswordError && newPassword && confirmPassword === newPassword) {
-        setIsFormValid(true);
-      } else {
-        setIsFormValid(false);
-      }
-  };
-
-  const validateCurrentPassword = async () => {
-    try {
-      const data = await saveData({
-        method: "POST",
-        url: "/users/validate-password",
-        payload: { currentPassword },
-      });
-      if (data.message === "Current password is correct") {
-        setCurrentPasswordError("");
-        
-      } else {
-        setCurrentPasswordError("Current password does not match");
-      }
-    } catch (error: any) {
-      setCurrentPasswordError("Please enter correct password");
-    }
-    validateForm();
-   
-  };
-
-  const validatePasswords = () => {
-    if (newPassword !== confirmPassword) {
-      setConfirmPasswordError("New password and confirm password must match");
-    } else {
-      setConfirmPasswordError("");
-    }
-
-    validateForm();
-  };
-
-  const onSubmit = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    event.preventDefault();
-    if (isFormValid) {
-      handleSubmit(currentPassword, newPassword, confirmPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } else {
-      showMessage("Please provide correct input before submitting");
-    }
-  };
-
-  const handleEnterKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter") {
-      onSubmit(event as any);
-    }
-  };
+  }, [open, reset]);
 
   return (
     <Dialog
@@ -119,53 +59,54 @@ export const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
       TransitionComponent={Transition}
       keepMounted
       onClose={handleClose}
-      onKeyDown={handleEnterKeyDown}
     >
       <DialogTitle>Change Password</DialogTitle>
       <DialogContent>
-        <TextField
-          autoFocus
-          margin="dense"
-          id="currentPassword"
-          label="Current Password"
-          type="password"
-          fullWidth
-          variant="standard"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          onBlur={validateCurrentPassword}
-          helperText={currentPasswordError}
-          error={!!currentPasswordError}
+        <Controller
+          name="newPassword"
+          control={control}
+          defaultValue=""
+          render={({ field }) => (
+            <TextField
+              {...field}
+              margin="dense"
+              label="New Password"
+              type="password"
+              fullWidth
+              variant="standard"
+              error={!!errors.newPassword}
+              helperText={errors.newPassword?.message}
+            />
+          )}
         />
-        <TextField
-          margin="dense"
-          id="newPassword"
-          label="New Password"
-          type="password"
-          fullWidth
-          variant="standard"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-        <TextField
-          margin="dense"
-          id="confirmPassword"
-          label="Confirm Password"
-          type="password"
-          fullWidth
-          variant="standard"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          onBlur={validatePasswords}
-          helperText={confirmPasswordError}
-          error={!!confirmPasswordError}
+        <Controller
+          name="confirmPassword"
+          control={control}
+          defaultValue=""
+          render={({ field }) => (
+            <TextField
+              {...field}
+              margin="dense"
+              label="Confirm Password"
+              type="password"
+              fullWidth
+              variant="standard"
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+            />
+          )}
         />
       </DialogContent>
       <DialogActions>
         <Button variant="text" onClick={handleClose}>
           Cancel
         </Button>
-        <Button variant="contained" type="submit" onClick={onSubmit} disabled={!isFormValid}>
+        <Button
+          variant="contained"
+          type="submit"
+          onClick={handleFormSubmit(onSubmit)}
+          disabled={!isValid}
+        >
           Submit
         </Button>
       </DialogActions>
