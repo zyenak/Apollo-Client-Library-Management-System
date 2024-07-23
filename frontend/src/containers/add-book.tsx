@@ -1,12 +1,31 @@
 import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { BooksContext } from '../context/books-context';
 import CustomForm, { FormField } from '../components/forms/custom-form';
-import withInputValidation from '../hoc/input-error-handling';
+import * as yup from 'yup';
 
 const BookFormContainer: React.FC = () => {
-  const { addBook, updateBook } = useContext(BooksContext);
+  const { addBook, updateBook, books } = useContext(BooksContext);
   const navigate = useNavigate();
+  const { bookIsbn } = useParams<{ bookIsbn?: string }>();
+
+  const initialData = bookIsbn
+    ? books.find((book) => book.isbn === bookIsbn) || {
+        name: '',
+        isbn: '',
+        category: '',
+        price: 0,
+        quantity: 0,
+        toUpdate: false,
+      }
+    : {
+        name: '',
+        isbn: '',
+        category: '',
+        price: 0,
+        quantity: 0,
+        toUpdate: false,
+      };
 
   const handleBookSubmit = (data: any) => {
     data.toUpdate ? updateBook(data) : addBook(data);
@@ -21,26 +40,22 @@ const BookFormContainer: React.FC = () => {
     { label: 'Quantity', name: 'quantity', type: 'number', required: true },
   ];
 
-  const ValidatedBookForm = withInputValidation(CustomForm);
-
-  const initialData = {
-    name: '',
-    isbn: '',
-    category: '',
-    price: 0,
-    quantity: 0,
-    toUpdate: false,
-  };
+  const validationSchema = yup.object().shape({
+    name: yup.string().required('Name is required'),
+    isbn: yup.string().required('ISBN is required'),
+    category: yup.string().required('Category is required'),
+    price: yup.number().required('Price is required').positive('Price must be positive'),
+    quantity: yup.number().required('Quantity is required').positive('Quantity must be positive'),
+  });
 
   return (
-    <ValidatedBookForm
+    <CustomForm
       formType="book"
       initialData={initialData}
-      toUpdate={false}
+      toUpdate={!!bookIsbn}
       onSubmit={handleBookSubmit}
       fields={bookFields}
-      validateForm={(formData: any) => true} 
-      errors={{}} 
+      validationSchema={validationSchema}
     />
   );
 };
